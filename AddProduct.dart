@@ -81,39 +81,53 @@ class _AddProductScreenState extends State<AddProductScreen> {
   addProduct() async {
     List missing = [];
     final db = ProductDatabase();
+    // converte a imagem em bytes
     Uint8List _convertedImage = await _selectedImage!.readAsBytes();
-    dynamic img_size = _convertedImage.lengthInBytes;
-    print(img_size);
-    print(5e+6);
-    print(5e+6);
-    print(formatFileSize(img_size));
+    // pega o tamanho da imagem em bytes
+    dynamic img_size = (_convertedImage.lengthInBytes);
+    // verifica se todos os campos foram preenchidos e se a imagem tem menos de 5MB.
     if (_selectedImage != null &&
         _custo != null &&
         _preco != null &&
-        _produto != null) {
+        _produto != null &&
+        img_size < 5e+6) {
+      // Converte os dinheiros para double
       double _convertedCost = double.parse(_custo!.replaceAll(',', '.'));
       double _convertedPrice = double.parse(_preco!.replaceAll(',', '.'));
+      // adiciona o produto na database
       db.insertProduct(
           _convertedImage, _produto!, _convertedCost, _convertedPrice);
       Navigator.of(context).pop();
     } else {
+      // adiciona na mensagem se falta imagem
       if (_selectedImage == null && missing.contains('Imagem') == false) {
         missing.add('Imagem');
       }
+      // adiciona na mensagem se falta Custo
       if (_custo == null && missing.contains('Custo') == false) {
         missing.add('Custo');
       }
+      // adiciona na mensagem se falta Preço
       if (_preco == null && missing.contains('Preço') == false) {
         missing.add('Preço');
       }
+      // adiciona na mensagem se falta Nome do produto
       if (_produto == null && missing.contains('Nome do produto') == false) {
         missing.add('Nome do produto');
       }
-      String formated = missing.join(', ');
-      decoration.infoPopup(context,
-          'Não foi possível salvar, falta preencher os campos: $formated',
-          duration: 5);
+      // Mensagem se a imagem tem mais de 5MB
+      if (img_size > 5e+6) {
+        decoration.infoPopup(
+            context, 'Imagem muito pesada, imagens devem ter menos de 5 MB',
+            duration: 5);
+      }
     }
+
+    //mensagem com tudo que ta faltando
+    String formated = missing.join(', ');
+    decoration.infoPopup(context,
+        'Não foi possível salvar, falta preencher os campos: $formated',
+        duration: 5);
   }
 
   @override

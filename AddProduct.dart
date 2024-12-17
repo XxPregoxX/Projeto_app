@@ -81,12 +81,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
   addProduct() async {
     List missing = [];
     final db = ProductDatabase();
-
+    Uint8List _convertedImage = await _selectedImage!.readAsBytes();
+    dynamic img_size = _convertedImage.lengthInBytes;
+    print(img_size);
+    print(5e+6);
+    print(5e+6);
+    print(formatFileSize(img_size));
     if (_selectedImage != null &&
         _custo != null &&
         _preco != null &&
         _produto != null) {
-      Uint8List _convertedImage = await _selectedImage!.readAsBytes();
       double _convertedCost = double.parse(_custo!.replaceAll(',', '.'));
       double _convertedPrice = double.parse(_preco!.replaceAll(',', '.'));
       db.insertProduct(

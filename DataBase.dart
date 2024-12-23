@@ -201,14 +201,16 @@ class ProductDatabase {
           owner TEXT, 
           cost REAL, 
           price REAL, 
-          image BLOB)''',
+          image BLOB,
+          synced INTEGER,
+          stock INTEGER)''',
         );
       },
     );
   }
 
-  Future<void> insertProduct(
-      Uint8List imageData, String name, double cost, double price) async {
+  Future<void> insertProduct(Uint8List imageData, String name, double cost,
+      double price, int amount) async {
     final db = await database;
     var id = idGenerator();
     final List<Map<String, dynamic>> maps = await db.query('products');
@@ -225,6 +227,8 @@ class ProductDatabase {
           'owner': "Luana",
           'cost': cost,
           'price': price,
+          'synced': 0,
+          'stock': amount
         });
       } catch (e) {
         print(

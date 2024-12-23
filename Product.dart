@@ -82,7 +82,14 @@ class _ProductState extends State<Product> {
                   ),
                   SizedBox(height: 30.0),
                   // ajustar depois,
-                  Text('Proprietario: ' + data!['owner']),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Proprietario: ' + data!['owner']),
+                      SizedBox(width: 15.0),
+                      Text('Saldo:' + data!['stock'].toString())
+                    ],
+                  ),
                   SizedBox(height: 30.0),
                   Text(profit!),
                   Text('Tamanho: ' + fileSize!),

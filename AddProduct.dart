@@ -17,11 +17,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _price1Controller = TextEditingController();
   final TextEditingController _price2Controller = TextEditingController();
+
+  TextEditingController _controller = TextEditingController();
   final decoration = Widgets();
   File? _selectedImage;
   String? _produto;
   String? _custo;
   String? _preco;
+  int quantity = 1;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -95,8 +98,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       double _convertedCost = double.parse(_custo!.replaceAll(',', '.'));
       double _convertedPrice = double.parse(_preco!.replaceAll(',', '.'));
       // adiciona o produto na database
-      db.insertProduct(
-          _convertedImage, _produto!, _convertedCost, _convertedPrice);
+      db.insertProduct(_convertedImage, _produto!, _convertedCost,
+          _convertedPrice, quantity);
       Navigator.of(context).pop();
     } else {
       // adiciona na mensagem se falta imagem
@@ -121,13 +124,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
             context, 'Imagem muito pesada, imagens devem ter menos de 5 MB',
             duration: 5);
       }
+      //mensagem com tudo que ta faltando
+      String formated = missing.join(', ');
+      decoration.infoPopup(context,
+          'Não foi possível salvar, falta preencher os campos: $formated',
+          duration: 5);
     }
+  }
 
-    //mensagem com tudo que ta faltando
-    String formated = missing.join(', ');
-    decoration.infoPopup(context,
-        'Não foi possível salvar, falta preencher os campos: $formated',
-        duration: 5);
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = quantity.toString();
+  }
+
+  void _updateQuantity(int newQuantity) {
+    setState(() {
+      quantity = newQuantity;
+      _controller.text = quantity.toString();
+    });
   }
 
   @override
@@ -211,6 +226,42 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             r'^\d*[.,]?\d{0,2}$')), // Aceita apenas dígitos
                       ],
                     ),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      if (quantity > 0) _updateQuantity(quantity - 1);
+                    },
+                    icon: Icon(Icons.remove),
+                  ),
+                  SizedBox(
+                    width: 50,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: InputBorder.none, // Remove a linha de baixo
+                      ),
+                      controller: _controller,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      onSubmitted: (value) {
+                        final parsed = int.tryParse(value);
+                        if (parsed != null && parsed >= 0) {
+                          _updateQuantity(parsed);
+                        } else {
+                          _controller.text = quantity.toString();
+                        }
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      _updateQuantity(quantity + 1);
+                    },
+                    icon: Icon(Icons.add),
                   ),
                 ],
               ),

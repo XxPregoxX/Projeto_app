@@ -20,11 +20,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   TextEditingController _controller = TextEditingController();
   final decoration = Widgets();
-  File? _selectedImage;
+  File? _imageFile;
   String? _produto;
   String? _custo;
   String? _preco;
   int quantity = 1;
+  Uint8List? _selectedImage;
+  String? imageSize;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -45,10 +47,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   dynamic pickedFile =
                       await _picker.pickImage(source: ImageSource.gallery);
                   pickedFile = await cropIMG(context, pickedFile);
+                  _imageFile = File(pickedFile.path);
+                  _selectedImage = await _imageFile!.readAsBytes();
 
                   if (pickedFile != null) {
                     setState(() {
-                      _selectedImage = File(pickedFile.path);
+                      imageSize = formatFileSize(_selectedImage!.length);
                     });
                   } else {
                     decoration.infoPopup(
@@ -64,10 +68,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   dynamic pickedFile =
                       await _picker.pickImage(source: ImageSource.camera);
                   pickedFile = await cropIMG(context, pickedFile);
+                  _imageFile = File(pickedFile.path);
+                  _selectedImage = await _imageFile!.readAsBytes();
 
                   if (pickedFile != null) {
                     setState(() {
-                      _selectedImage = File(pickedFile.path);
+                      imageSize = formatFileSize(_selectedImage!.length);
                     });
                   } else {
                     decoration.infoPopup(context, 'Nenhuma imagem capturada.');
@@ -85,9 +91,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     List missing = [];
     final db = ProductDatabase();
     // converte a imagem em bytes
-    Uint8List _convertedImage = await _selectedImage!.readAsBytes();
     // pega o tamanho da imagem em bytes
-    dynamic img_size = (_convertedImage.lengthInBytes);
+    dynamic img_size = (_selectedImage!.lengthInBytes);
     // verifica se todos os campos foram preenchidos e se a imagem tem menos de 5MB.
     if (_selectedImage != null &&
         _custo != null &&
@@ -98,7 +103,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       double _convertedCost = double.parse(_custo!.replaceAll(',', '.'));
       double _convertedPrice = double.parse(_preco!.replaceAll(',', '.'));
       // adiciona o produto na database
-      db.insertProduct(_convertedImage, _produto!, _convertedCost,
+      db.insertProduct(_selectedImage!, _produto!, _convertedCost,
           _convertedPrice, quantity);
       Navigator.of(context).pop();
     } else {
@@ -161,26 +166,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
-                  height: MediaQuery.of(context).size.height * 0.50,
-                  width: MediaQuery.of(context).size.width * 0.95,
+                  height: MediaQuery.of(context).size.height * 0.43,
+                  width: MediaQuery.of(context).size.height * 0.43,
                   decoration: BoxDecoration(
-                    border: Border.all(),
+                    border: Border.all(
+                        color: Color.fromARGB(255, 147, 51, 185), width: 3),
                     borderRadius: BorderRadius.circular(15.0),
                   ),
                   child: _selectedImage == null
                       ? Center(child: Text('Selecionar Imagem'))
-                      : Image.file(_selectedImage!, fit: BoxFit.fitHeight),
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Image.memory(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                 ),
               ),
+              imageSize == null
+                  ? SizedBox(height: 5)
+                  : Container(
+                      width: MediaQuery.of(context).size.height * 0.39,
+                      child: Text(
+                        style: TextStyle(fontSize: 10),
+                        imageSize!,
+                        textAlign: TextAlign.start,
+                      ),
+                    ),
               SizedBox(height: 5),
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.70,
+                height: MediaQuery.of(context).size.height * 0.09,
                 // Campo de nome
                 child: TextField(
-                    onChanged: (value) => _produto = value,
-                    controller: _nameController,
-                    decoration: decoration.halfInputText('Nome do Produto'),
-                    maxLength: 10),
+                  onChanged: (value) => _produto = value,
+                  controller: _nameController,
+                  decoration: decoration.halfInputText('Nome do Produto'),
+                  maxLength: 10,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                ),
               ),
               SizedBox(height: 5),
               Row(
@@ -189,6 +214,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   // Campo de preço 1
                   SizedBox(
                     width: (MediaQuery.of(context).size.width * 0.35) - 7.5,
+                    height: MediaQuery.of(context).size.height * 0.09,
                     child: TextField(
                       onChanged: (value) => _custo = value,
                       controller: _price1Controller,
@@ -196,6 +222,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           TextInputType.numberWithOptions(decimal: true),
                       decoration: decoration.halfInputText('Custo'),
                       maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(
                             r'^\d*[.,]?\d{0,2}$')), // Aceita apenas dígitos
@@ -207,6 +234,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   // Campo de preço 2
                   SizedBox(
                     width: (MediaQuery.of(context).size.width * 0.35) - 7.5,
+                    height: MediaQuery.of(context).size.height * 0.09,
                     child: TextField(
                       onChanged: (value) => {
                         _preco = value,
@@ -221,6 +249,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           TextInputType.numberWithOptions(decimal: true),
                       decoration: decoration.halfInputText('Preço'),
                       maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(
                             r'^\d*[.,]?\d{0,2}$')), // Aceita apenas dígitos
@@ -229,6 +258,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ],
               ),
+              SizedBox(height: 10),
+              Text('Saldo de estoque:'),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -242,8 +273,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     width: 50,
                     child: TextField(
                       decoration: InputDecoration(
-                        border: InputBorder.none, // Remove a linha de baixo
+                        // Remove a linha de baixo
+                        border: InputBorder.none,
+                        counterText: '',
                       ),
+                      maxLength: 2,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       controller: _controller,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
@@ -265,10 +300,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 30.0),
+              SizedBox(height: 5.0),
               SizedBox(
                   width: MediaQuery.of(context).size.width * 0.70,
-                  height: MediaQuery.of(context).size.height * 0.08,
+                  height: MediaQuery.of(context).size.height * 0.07,
                   child: decoration.button('Confirmar', () => addProduct()))
             ],
           ),

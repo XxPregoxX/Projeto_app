@@ -68,7 +68,7 @@ class _ProductState extends State<Product> {
                       Column(
                         children: [
                           Text("Custo de compra: "),
-                          Text(formatCurrency(data!['price'])),
+                          Text(formatCurrency(data!['cost'])),
                         ],
                       ),
                       SizedBox(width: 15.0),

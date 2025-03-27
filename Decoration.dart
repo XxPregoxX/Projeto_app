@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:experimentos/Functions.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
-class Widgets {
+class MyWidgets {
   InputDecoration halfInputText(String text) {
     return InputDecoration(
       labelText: text,
@@ -12,6 +17,46 @@ class Widgets {
             color: Color.fromARGB(99, 246, 195, 255), width: 1),
       ),
     );
+  }
+
+  DisplayContainer(
+      {BuildContext? context, Widget? column, double? Height, double? Width}) {
+    Height ??= MediaQuery.of(context!).size.height * 0.70;
+    Width ??= MediaQuery.of(context!).size.width * 0.43;
+    return Container(
+      width: Width,
+      height: Height,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+
+      // Coluna direita
+      child: column,
+    );
+  }
+
+  Rowidget(
+      {BuildContext? context, Widget? column, double? Height, double? Width}) {
+    Height ??= MediaQuery.of(context!).size.height * 0.05;
+    Width ??= MediaQuery.of(context!).size.width * 0.425;
+    return Container(
+      width: Width,
+      height: Height,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+
+      // Coluna direita
+      child: column,
+    );
+  }
+
+  TextStyle Labels() {
+    return TextStyle(fontSize: 12);
+  }
+
+  TextStyle Values() {
+    return TextStyle(fontSize: 11);
   }
 
   OutlinedButton button(String text, onpressed) {

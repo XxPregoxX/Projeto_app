@@ -24,10 +24,12 @@ class MainDrawer extends StatelessWidget {
                 decoration: const BoxDecoration(
               color: Colors.white,
             )),
+            // pagina inicial
             ListTile(
               onTap: () {
                 Navigator.of(context).pushNamed('/Home');
               },
+              // Verifica a pagina e deixa o nome dela em negrito no drawer.
               title: page == 'home'
                   ? const Text(
                       'Home',
@@ -35,10 +37,12 @@ class MainDrawer extends StatelessWidget {
                     )
                   : const Text('Home'),
             ),
+            // pagina de produtos.
             ListTile(
               onTap: () {
                 Navigator.of(context).pushNamed('/Storage');
               },
+              // Verifica a pagina e deixa o nome dela em negrito no drawer.
               title: page == 'storage'
                   ? const Text(
                       'Catálogo',
@@ -46,10 +50,12 @@ class MainDrawer extends StatelessWidget {
                     )
                   : const Text('Catálogo'),
             ),
+            // pagina de clientes
             ListTile(
               onTap: () {
                 Navigator.of(context).pushNamed('/Customers');
               },
+              // Verifica a pagina e deixa o nome dela em negrito no drawer.
               title: page == 'customers'
                   ? const Text(
                       'Clientes',
@@ -57,11 +63,26 @@ class MainDrawer extends StatelessWidget {
                     )
                   : const Text('Clientes'),
             ),
+            // Botão de testes para mudar a logo, tenho que colocar em uma tela de
+            // parsonalização depois.
             ListTile(
               onTap: () {
                 pickLogo();
               },
               title: Text('Change Logo'),
+            ),
+            // pagina de revendedores
+            ListTile(
+              onTap: () {
+                Navigator.of(context).pushNamed('/Sellers');
+              },
+              // Verifica a pagina e deixa o nome dela em negrito no drawer.
+              title: page == 'sellers'
+                  ? const Text(
+                      'Revendedores',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    )
+                  : const Text('Revendedores'),
             ),
           ],
         ),

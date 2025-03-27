@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
@@ -10,8 +12,11 @@ import 'package:flutter/services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
 
 class ClientDatabase {
+  dynamic user = FirebaseAuth.instance.currentUser;
   static Database? _database;
 
   Future<Database> get database async {
@@ -33,6 +38,7 @@ class ClientDatabase {
             name TEXT,
             phone TEXT UNIQUE,
             synced INTEGER
+            history TEXT
           )
         ''');
       },
@@ -64,6 +70,32 @@ class ClientDatabase {
     await db.update('clients', {'synced': synced},
         where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<void> syncClientsToFirebase() async {
+    await Firebase.initializeApp();
+    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    String id = await user!.uid;
+    final ClientDatabase _localDb = ClientDatabase();
+    // Pegar os dados locais que não foram sincronizados (synced = 0)
+    List<Map<String, dynamic>> unsyncedClients = await _localDb.getClients();
+
+    // Para cada cliente não sincronizado, vamos enviá-lo ao Firestore
+    for (var client in unsyncedClients) {
+      if (client['synced'] == 0) {
+        // campo temporario mudar "Luana para variavel de ususario ADM"
+        await _firestore
+            .collection('/Cadastros/Luana/Revendedoras/$id/Clientes')
+            .doc(client['id'])
+            .set({
+          'name': client['name'],
+          'phone': client['phone'],
+        });
+
+        // Após sincronizar, marcamos o cliente como sincronizado (synced = 1)
+        await _localDb.updateClientSyncStatus(client['id'], 1);
+      }
+    }
+  }
 }
 
 // remover depois
@@ -82,34 +114,6 @@ void printDatabase() async {
     for (var client in clients) {
       print(
           "ID: ${client['id']}, Nome: ${client['name']}, Telefone: ${client['phone']}, Sincronizado: ${client['synced']}");
-    }
-  }
-}
-
-class SyncService {
-  Future<void> syncDataToFirebase() async {
-    await Firebase.initializeApp();
-    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-    final ClientDatabase _localDb = ClientDatabase();
-    // Pegar os dados locais que não foram sincronizados (synced = 0)
-    List<Map<String, dynamic>> unsyncedClients = await _localDb.getClients();
-
-    // Para cada cliente não sincronizado, vamos enviá-lo ao Firestore
-    for (var client in unsyncedClients) {
-      if (client['synced'] == 0) {
-        // campo temporario mudar "Luana para variavel de ususario ADM"
-        await _firestore
-            .collection(
-                '/Cadastros/Luana/Revendedoras/Leonardo Borges/Clientes')
-            .doc(client['id'])
-            .set({
-          'name': client['name'],
-          'phone': client['phone'],
-        });
-
-        // Após sincronizar, marcamos o cliente como sincronizado (synced = 1)
-        await _localDb.updateClientSyncStatus(client['id'], 1);
-      }
     }
   }
 }
@@ -137,7 +141,7 @@ void syncIfConnected() async {
   var connectivityResult = await Connectivity().checkConnectivity();
   // Alterar depois para buscar dados do firebase também
   if (connectivityResult[0] != ConnectivityResult.none) {
-    await SyncService().syncDataToFirebase();
+    await ClientDatabase().syncClientsToFirebase();
   }
 }
 
@@ -244,7 +248,7 @@ class ProductDatabase {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('products');
     List idList = await List<String>.generate(maps.length, (i) {
-      String ID = maps[i]['id'].toString() as String;
+      String ID = maps[i]['id'] as String;
       return ID;
     });
 
@@ -255,7 +259,7 @@ class ProductDatabase {
     }
   }
 
-  Future<List<dynamic>> getImages() async {
+  Future<List<dynamic>> getProduct() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('products');
     return List.generate(maps.length, (i) {
@@ -269,13 +273,28 @@ class ProductDatabase {
   }
 
   // Função para excluir uma imagem do banco de dados
-  Future<void> deleteImage(int id) async {
+  Future<void> deleteProduct(int id) async {
     final db = await database;
     await db.delete(
       'products',
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> SellProduct(int id, String field, dynamic value) async {
+    final db = await database;
+
+    try {
+      await db.update(
+        'products',
+        {field: value},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print(e);
+    }
   }
 }
 
@@ -342,5 +361,330 @@ Future<void> pickLogo() async {
   } else {
     // ajustar depois
     print('Nenhuma imagem selecionada.');
+  }
+}
+
+class User {
+  FirebaseAuth auth = FirebaseAuth.instance;
+  dynamic user = FirebaseAuth.instance.currentUser;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static Database? _database;
+  static Database? _userdata;
+  static Database? _role;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await userDatabase();
+    return _database!;
+  }
+
+  Future<Database> get userdata async {
+    if (_userdata != null) return _userdata!;
+    _userdata = await userInfo();
+    return _userdata!;
+  }
+
+  Future<Database> get role async {
+    if (_role != null) return _role!;
+    _role = await Role();
+    return _role!;
+  }
+
+  userDatabase() async {
+    String path = join(await getDatabasesPath(), 'user_data.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          '''CREATE TABLE user_data(
+          data TEXT,
+          receita REAL,
+          lucro REAL,
+          comissão REAL,
+          id TEXT,
+          productID TEXT,
+          quantidade INTEGER,
+          synced INTEGER)''',
+        );
+      },
+    );
+  }
+
+  userInfo() async {
+    String path = join(await getDatabasesPath(), 'perfil.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          '''CREATE TABLE perfil(
+          nome TEXT,
+          cpf TEXT,
+          email TEXT,
+          telefone TEXT,
+          cargo TEXT,
+          comissão REAL,
+          dataCadastro TEXT)''',
+        );
+      },
+    );
+  }
+
+  Role() async {
+    String path = join(await getDatabasesPath(), 'role.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          '''CREATE TABLE role(
+          nome TEXT,
+          Produtos INTEGER,
+          Clientes INTEGER,
+          Revendedoras INTEGER,
+          Financeiro INTEGER)''',
+        );
+      },
+    );
+  }
+
+  _getuserdataFirebase() async {
+    String id = await user!.uid;
+    var db = await userdata;
+    await db.delete('perfil');
+    var info = _firestore.collection("/Cadastros/Luana/Revendedoras");
+    var doc = await info.doc(id).get();
+    String name = doc.data()!['nome'];
+    String cpf = doc.data()!['cpf'];
+    String email = doc.data()!['email'];
+    String phone = doc.data()!['telefone'];
+    double comission = doc.data()!['comissão'];
+    String role = doc.data()!['cargo'];
+    DateTime date = doc.data()!['dataCadastro'].toDate();
+    String formattedDate =
+        "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}:${date.second}";
+    await db.insert('perfil', {
+      "nome": name,
+      "cpf": cpf,
+      "email": email,
+      "telefone": phone,
+      "comissão": comission,
+      "cargo": role,
+      "dataCadastro": formattedDate,
+    });
+  }
+
+  getUserRole() async {
+    var db = await userdata;
+    try {
+      List<Map<String, dynamic>> result = await db.query(
+        'perfil',
+        columns: ['cargo'],
+        limit: 1,
+      );
+      return await result.first['cargo'];
+    } catch (e) {
+      await _getuserdataFirebase();
+      List<Map<String, dynamic>> result = await db.query(
+        'perfil',
+        columns: ['cargo'],
+        limit: 1,
+      );
+      return await result.first['cargo'];
+    }
+  }
+
+  //funçaõ para criar os cargos, a ideia é uma lista com o nome de um elemento do sistema como chave, e o valor dessa chave sendo um int de 0 a 2
+  // 0: sem premissão nenhuma
+  // 1: permissão de ler
+  // 2: permissão de ler e escrever(editar/adicionar)
+  MakeRole(
+      {required String? nome,
+      required int? produtos,
+      required int? clientes,
+      required int? sistema,
+      required int? revendedoras,
+      required int? financeiro}) {
+    var pasta = _firestore.collection("/Cadastros/Luana/Cargos");
+
+    pasta.doc(nome).set({
+      'Produtos': produtos,
+      'Clientes': clientes,
+      'Sistema': sistema,
+      'Revendedoras': revendedoras,
+      'Financeiro': financeiro
+    });
+  }
+
+  GetPermissions({
+    required String? nome,
+  }) async {}
+
+  getProduct(id) async {
+    dynamic db = await ProductDatabase().database;
+    var result = await db.query('products', where: 'id = ?', whereArgs: [id]);
+
+    return result;
+  }
+
+  Future<double?> getComission() async {
+    var db = await userdata;
+    try {
+      List<Map<String, dynamic>> result = await db.query(
+        'perfil',
+        columns: ['comissão'],
+        limit: 1,
+      );
+      return await result.first['comissão'] as double;
+    } catch (e) {
+      await _getuserdataFirebase();
+      List<Map<String, dynamic>> result = await db.query(
+        'perfil',
+        columns: ['comissão'],
+        limit: 1,
+      );
+      return await result.first['comissão'] as double;
+    }
+  }
+
+  insertSell(
+      {required double? comissao,
+      required double? receita,
+      required double? lucro,
+      required String? productID}) async {
+    DateTime tempo = DateTime.now();
+    String data = DateFormat("yyyy/MM/dd HH:mm").format(tempo);
+    String formated = DateFormat("yyyyMMddHHmmssSSS").format(tempo);
+    String id = formated.split('').reversed.join('');
+    var db = await database;
+    await db.insert('user_data', {
+      'data': data,
+      'comissão': comissao,
+      'receita': receita,
+      'lucro': lucro,
+      'id': id,
+      'productID': productID,
+      'quantidade': 1,
+      'synced': 0,
+    });
+    SyncSellstoFirebase();
+  }
+
+  SyncSellstoFirebase() async {
+    var db = await database;
+    String uid = await user!.uid;
+
+    var result =
+        await db.query('user_data', where: 'synced = ?', whereArgs: [0]);
+    result.forEach((row) async {
+      dynamic data = row['data'];
+      dynamic id = row['id'];
+      dynamic lucro = row['lucro'];
+      dynamic productID = row['productID'];
+      dynamic comissao = row['comissão'];
+      dynamic receita = row['receita'];
+      var cloud =
+          _firestore.collection("/Cadastros/Luana/Revendedoras/$uid/Vendas");
+      cloud.doc(id).set({
+        'id': id,
+        'data': data,
+        'receita': receita,
+        'lucro': lucro,
+        'comissão': comissao,
+        'productID': productID,
+      });
+      await db.update('user_data', {'synced': 1},
+          where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
+  getSells() async {
+    var db = await database;
+    var result = await db.query('user_data');
+    Map agrupamento = {};
+    List agrupado = [];
+
+    for (var venda in result) {
+      var id = venda['productID'];
+      if (agrupamento.containsKey(id)) {
+        var update_quantidade =
+            agrupamento[id]!['quantidade'] + venda['quantidade'];
+        var update_lucro = agrupamento[id]!['lucro'] + venda['lucro'];
+        var update_comissao = agrupamento[id]!['comissão'] + venda['comissão'];
+        var update_receita = agrupamento[id]!['receita'] + venda['receita'];
+        agrupamento[id]['quantidade'] = update_quantidade;
+        agrupamento[id]['lucro'] = update_lucro;
+        agrupamento[id]['comissão'] = update_comissao;
+        agrupamento[id]['receita'] = update_receita;
+      } else {
+        Map<String, dynamic> Convert = Map<String, dynamic>.from(venda);
+        agrupamento.putIfAbsent(id, () => Convert);
+      }
+    }
+    agrupado = agrupamento.values.toList();
+    return agrupado;
+  }
+
+  Future<int> getTotalQuantidade(String productID) async {
+    final db = await database; // Obtém a instância do banco de dados
+    final result = await db.rawQuery(
+        'SELECT SUM(quantidade) as total FROM user_data WHERE productID = ?',
+        [productID]);
+
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return result.first['total'] as int;
+    } else {
+      return 0; // Retorna 0 se não houver valores na coluna
+    }
+  }
+
+  Add_user({
+    required String? email,
+    required String? password,
+    required String? name,
+    required String? number,
+    required String? cpf,
+    required double? comission,
+    required String? role,
+  }) async {
+    String _tratarErroFirebase(String code) {
+      switch (code) {
+        case 'invalid-email':
+          return "O e-mail fornecido é inválido.";
+        case 'user-not-found':
+          return "Usuário não encontrado.";
+        case 'wrong-password':
+          return "Senha incorreta.";
+        case 'email-already-in-use':
+          return "Este e-mail já está em uso.";
+        case 'weak-password':
+          return "A senha é muito fraca.";
+        case 'network-request-failed':
+          return "Falha de conexão com a internet.";
+        default:
+          return "Erro desconhecido: $code";
+      }
+    }
+
+    try {
+      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
+          email: email!.trim(), password: password!.trim());
+      String id = userCredential.user!.uid;
+      var make_seller =
+          await _firestore.collection("/Cadastros/Luana/Revendedoras");
+
+      make_seller.doc(id).set({
+        "nome": name!.trim(),
+        "cpf": cpf!.trim(),
+        "email": email!.trim(),
+        "telefone": number!.trim(),
+        "comissão": comission!,
+        "cargo": role,
+        "dataCadastro": FieldValue.serverTimestamp(),
+      });
+    } on FirebaseAuthException catch (error) {
+      return _tratarErroFirebase(error.code);
+    }
   }
 }

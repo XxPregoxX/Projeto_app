@@ -1,7 +1,9 @@
 import 'package:experimentos/AddProduct.dart';
+import 'package:experimentos/Add_Seller.dart';
 import 'package:experimentos/Loading.dart';
 import 'package:experimentos/Login.dart';
 import 'package:experimentos/Product.dart';
+import 'package:experimentos/Revendedoras.dart';
 import 'package:experimentos/Scaner.dart';
 import 'package:experimentos/Storage.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,8 @@ class _AppWidgetState extends State<AppWidget> {
     '/Login': (context) => LoginPage(),
     '/addProduct': (context) => AddProductScreen(),
     '/Product': (context) => Product(),
+    '/Sellers': (context) => Sellers(),
+    '/AddSeller': (context) => AddSeller(),
   };
   dynamic theme = ThemeData(
     brightness: Brightness.dark,

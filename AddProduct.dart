@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:experimentos/DataBase.dart';
@@ -19,7 +18,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final TextEditingController _price2Controller = TextEditingController();
 
   TextEditingController _controller = TextEditingController();
-  final decoration = Widgets();
+  final decoration = MyWidgets();
   File? _imageFile;
   String? _produto;
   String? _custo;
@@ -46,11 +45,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   Navigator.of(context).pop();
                   dynamic pickedFile =
                       await _picker.pickImage(source: ImageSource.gallery);
-                  pickedFile = await cropIMG(context, pickedFile);
-                  _imageFile = File(pickedFile.path);
-                  _selectedImage = await _imageFile!.readAsBytes();
-
                   if (pickedFile != null) {
+                    pickedFile = await cropIMG(context, pickedFile);
+                    _imageFile = File(pickedFile.path);
+                    _selectedImage = await _imageFile!.readAsBytes();
+
                     setState(() {
                       imageSize = formatFileSize(_selectedImage!.length);
                     });
@@ -67,11 +66,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   Navigator.of(context).pop();
                   dynamic pickedFile =
                       await _picker.pickImage(source: ImageSource.camera);
-                  pickedFile = await cropIMG(context, pickedFile);
-                  _imageFile = File(pickedFile.path);
-                  _selectedImage = await _imageFile!.readAsBytes();
-
                   if (pickedFile != null) {
+                    pickedFile = await cropIMG(context, pickedFile);
+                    _imageFile = File(pickedFile.path);
+                    _selectedImage = await _imageFile!.readAsBytes();
+
                     setState(() {
                       imageSize = formatFileSize(_selectedImage!.length);
                     });

@@ -364,7 +364,7 @@ Future<void> pickLogo() async {
   }
 }
 
-class User {
+class User_Database {
   FirebaseAuth auth = FirebaseAuth.instance;
   dynamic user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -509,6 +509,7 @@ class User {
     var pasta = _firestore.collection("/Cadastros/Luana/Cargos");
 
     pasta.doc(nome).set({
+      'Cargo': nome,
       'Produtos': produtos,
       'Clientes': clientes,
       'Sistema': sistema,
@@ -519,12 +520,40 @@ class User {
 
   GetPermissions({
     required String? nome,
-  }) async {}
+    required String? cargo,
+  }) async {
+    var db = await role;
+    try {
+      List<Map<String, dynamic>> result = await db.query('role',
+          columns: [nome!], limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
+      return await result.first['cargo'];
+    } catch (e) {
+      await _getRolesFirebase();
+      List<Map<String, dynamic>> result = await db.query('role',
+          columns: [nome!], limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
+      return await result.first['cargo'];
+    }
+  }
+
+  _getRolesFirebase() async {
+    var cargos = await _firestore.collection("/Cadastros/Luana/Cargos").get();
+    var db = await role;
+    for (var cargo in cargos.docs) {
+      var cargoData = cargo.data();
+      await db.insert('role', {
+        'Cargo': cargoData['Cargo'],
+        'Produtos': cargoData['Produtos'],
+        'Clientes': cargoData['Clientes'],
+        'Sistema': cargoData['Sistema'],
+        'Revendedoras': cargoData['Revendedoras'],
+        'Financeiro': cargoData['Financeiro']
+      });
+    }
+  }
 
   getProduct(id) async {
     dynamic db = await ProductDatabase().database;
     var result = await db.query('products', where: 'id = ?', whereArgs: [id]);
-
     return result;
   }
 
@@ -687,4 +716,14 @@ class User {
       return _tratarErroFirebase(error.code);
     }
   }
+
+  Future<void> carregarDadosDoUsuario() async {
+    String cargo = await getUserRole();
+
+    UserDataCache.Cargo = cargo; // Armazena o cargo
+  }
+}
+
+class UserDataCache {
+  static String? Cargo;
 }

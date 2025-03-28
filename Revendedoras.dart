@@ -26,10 +26,10 @@ class SellersState extends State<Sellers> {
   }
 
   getInfo() async {
-    vendas = await User().getSells();
+    vendas = await User_Database().getSells();
 
     for (var venda in vendas) {
-      var product = await User().getProduct(venda['productID']);
+      var product = await User_Database().getProduct(venda['productID']);
       await produtos.putIfAbsent(venda['id'], () => product[0]);
     }
     ;

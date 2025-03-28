@@ -30,7 +30,7 @@ class _ProductState extends State<Product> {
 
   Sell() {
     db.SellProduct(data!['id'], 'stock', data!['stock'] - 1);
-    User().insertSell(
+    User_Database().insertSell(
         comissao: comission, productID: id, receita: price, lucro: profit);
     setState(() {});
   }
@@ -42,17 +42,18 @@ class _ProductState extends State<Product> {
     productId = args['productId'] ?? 'Produto inexistente';
 
     data = await db.getbyid(productId);
-    vendidos = await User().getTotalQuantidade(productId!);
+    vendidos = await User_Database().getTotalQuantidade(productId!);
     price = data!['price'];
     cost = data!['cost'];
     id = data!["id"].toString();
     profitpercent = formatPercentage(((price! * 100) / cost!) - 100);
     profit = price! - cost!;
-    comissionPercentage = await User().getComission();
+    comissionPercentage = await User_Database().getComission();
     comission = price! * comissionPercentage!;
 
     // Obtenha os metadados do arquivo
     fileSize = formatFileSize(data!['image'].lengthInBytes);
+    print(UserDataCache.Cargo);
   }
 
   @override

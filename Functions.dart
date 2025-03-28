@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:experimentos/DataBase.dart';
 import 'package:experimentos/Decoration.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -63,6 +64,7 @@ Future<void> verifyLogin(String email, String senha, context) async {
     await FirebaseAuth.instance
         .signInWithEmailAndPassword(email: email, password: senha);
     if (FirebaseAuth.instance.currentUser != null) {
+      await User_Database().carregarDadosDoUsuario();
       Navigator.of(context).pushNamed('/Home');
     }
   }

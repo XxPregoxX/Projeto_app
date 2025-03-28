@@ -30,7 +30,7 @@ class _CustomersState extends State<Storage> {
   }
 
   Getrole() async {
-    mostrar = await User().getUserRole();
+    mostrar = await User_Database().getUserRole();
   }
 
   AddProduct() async {

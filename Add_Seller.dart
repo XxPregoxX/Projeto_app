@@ -38,7 +38,7 @@ class AddSellerState extends State<AddSeller> {
   ];
 
   Verify() async {
-    String? erro = await User().Add_user(
+    String? erro = await User_Database().Add_user(
         email: email,
         password: password,
         number: phone,

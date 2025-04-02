@@ -7,10 +7,8 @@ import 'package:experimentos/Functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:select_field/select_field.dart';
 import 'Decoration.dart';
-import 'Drawer.dart';
 
 class AddSeller extends StatefulWidget {
   @override

@@ -265,7 +265,7 @@ class ProductDatabase {
     return List.generate(maps.length, (i) {
       Uint8List image = maps[i]['image'] as Uint8List;
       String name = maps[i]['name'] as String;
-      String ID = maps[i]['id'].toString() as String;
+      String ID = maps[i]['id'].toString();
       double price = (maps[i]['price']) as double;
 
       return [image, ID, name, price];
@@ -507,6 +507,7 @@ class User_Database {
       required int? revendedoras,
       required int? financeiro}) {
     var pasta = _firestore.collection("/Cadastros/Luana/Cargos");
+    print('caraio');
 
     pasta.doc(nome).set({
       'Cargo': nome,

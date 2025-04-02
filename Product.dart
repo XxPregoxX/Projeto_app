@@ -54,6 +54,8 @@ class _ProductState extends State<Product> {
     // Obtenha os metadados do arquivo
     fileSize = formatFileSize(data!['image'].lengthInBytes);
     print(UserDataCache.Cargo);
+    int Permission = await User_Database()
+        .GetPermissions(nome: 'produtos', cargo: UserDataCache.Cargo);
   }
 
   @override

@@ -84,6 +84,18 @@ class MainDrawer extends StatelessWidget {
                     )
                   : const Text('Revendedores'),
             ),
+            ListTile(
+              onTap: () {
+                Navigator.of(context).pushNamed('/Settings');
+              },
+              // Verifica a pagina e deixa o nome dela em negrito no drawer.
+              title: page == 'settings'
+                  ? const Text(
+                      'Configurações',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    )
+                  : const Text('Configurações'),
+            ),
           ],
         ),
       ),

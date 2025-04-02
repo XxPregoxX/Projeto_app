@@ -1,11 +1,12 @@
 import 'package:experimentos/AddProduct.dart';
 import 'package:experimentos/Add_Seller.dart';
+import 'package:experimentos/Configura%C3%A7%C3%B5es.dart';
 import 'package:experimentos/Loading.dart';
 import 'package:experimentos/Login.dart';
 import 'package:experimentos/Product.dart';
 import 'package:experimentos/Revendedoras.dart';
 import 'package:experimentos/Scaner.dart';
-import 'package:experimentos/Storage.dart';
+import 'package:experimentos/Products.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'Customers.dart';
@@ -29,6 +30,7 @@ class _AppWidgetState extends State<AppWidget> {
     '/Product': (context) => Product(),
     '/Sellers': (context) => Sellers(),
     '/AddSeller': (context) => AddSeller(),
+    '/Settings': (context) => Config(),
   };
   dynamic theme = ThemeData(
     brightness: Brightness.dark,

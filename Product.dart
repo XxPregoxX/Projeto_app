@@ -26,6 +26,7 @@ class _ProductState extends State<Product> {
   double? cost;
   String? id;
   int? vendidos;
+  int permission = UserDataCache.Permissoes!['Produtos'];
   final db = ProductDatabase();
 
   Sell() {
@@ -50,12 +51,6 @@ class _ProductState extends State<Product> {
     profit = price! - cost!;
     comissionPercentage = await User_Database().getComission();
     comission = price! * comissionPercentage!;
-
-    // Obtenha os metadados do arquivo
-    fileSize = formatFileSize(data!['image'].lengthInBytes);
-    print(UserDataCache.Cargo);
-    int Permission = await User_Database()
-        .GetPermissions(nome: 'produtos', cargo: UserDataCache.Cargo);
   }
 
   @override

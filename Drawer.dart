@@ -63,14 +63,6 @@ class MainDrawer extends StatelessWidget {
                     )
                   : const Text('Clientes'),
             ),
-            // Botão de testes para mudar a logo, tenho que colocar em uma tela de
-            // parsonalização depois.
-            ListTile(
-              onTap: () {
-                pickLogo();
-              },
-              title: Text('Change Logo'),
-            ),
             // pagina de revendedores
             ListTile(
               onTap: () {

@@ -439,11 +439,12 @@ class User_Database {
       onCreate: (db, version) {
         return db.execute(
           '''CREATE TABLE role(
-          nome TEXT,
+          Cargo TEXT,
           Produtos INTEGER,
           Clientes INTEGER,
           Revendedoras INTEGER,
-          Financeiro INTEGER)''',
+          Financeiro INTEGER,
+          Sistema INTEGER)''',
         );
       },
     );
@@ -507,8 +508,6 @@ class User_Database {
       required int? revendedoras,
       required int? financeiro}) {
     var pasta = _firestore.collection("/Cadastros/Luana/Cargos");
-    print('caraio');
-
     pasta.doc(nome).set({
       'Cargo': nome,
       'Produtos': produtos,
@@ -520,36 +519,35 @@ class User_Database {
   }
 
   GetPermissions({
-    required String? nome,
     required String? cargo,
   }) async {
     var db = await role;
     try {
-      List<Map<String, dynamic>> result = await db.query('role',
-          columns: [nome!], limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
-      return await result.first['cargo'];
+      List<Map<String, dynamic>> result = await db
+          .query('role', limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
+      return await result.first;
     } catch (e) {
       await _getRolesFirebase();
-      List<Map<String, dynamic>> result = await db.query('role',
-          columns: [nome!], limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
-      return await result.first['cargo'];
+      List<Map<String, dynamic>> result = await db
+          .query('role', limit: 1, where: 'Cargo = ?', whereArgs: [cargo]);
+      return await result.first;
     }
   }
 
   _getRolesFirebase() async {
-    var cargos = await _firestore.collection("/Cadastros/Luana/Cargos").get();
+    String cargo = UserDataCache.Cargo!;
+    var cargo_info =
+        await _firestore.collection("/Cadastros/Luana/Cargos").doc(cargo).get();
     var db = await role;
-    for (var cargo in cargos.docs) {
-      var cargoData = cargo.data();
-      await db.insert('role', {
-        'Cargo': cargoData['Cargo'],
-        'Produtos': cargoData['Produtos'],
-        'Clientes': cargoData['Clientes'],
-        'Sistema': cargoData['Sistema'],
-        'Revendedoras': cargoData['Revendedoras'],
-        'Financeiro': cargoData['Financeiro']
-      });
-    }
+    var cargoData = cargo_info.data()!;
+    await db.insert('role', {
+      'Cargo': cargoData['Cargo'],
+      'Produtos': cargoData['Produtos'],
+      'Clientes': cargoData['Clientes'],
+      'Sistema': cargoData['Sistema'],
+      'Revendedoras': cargoData['Revendedoras'],
+      'Financeiro': cargoData['Financeiro']
+    });
   }
 
   getProduct(id) async {
@@ -720,11 +718,15 @@ class User_Database {
 
   Future<void> carregarDadosDoUsuario() async {
     String cargo = await getUserRole();
-
-    UserDataCache.Cargo = cargo; // Armazena o cargo
+    // Armazena o cargo
+    UserDataCache.Cargo = cargo;
+    // Armazena o as permissões
+    UserDataCache.Permissoes = await GetPermissions(cargo: cargo);
+    print(UserDataCache.Permissoes);
   }
 }
 
 class UserDataCache {
   static String? Cargo;
+  static Map? Permissoes;
 }

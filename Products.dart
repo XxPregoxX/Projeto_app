@@ -14,7 +14,7 @@ class Storage extends StatefulWidget {
 
 class _CustomersState extends State<Storage> {
   List list = [];
-  String? mostrar;
+  int permission = UserDataCache.Permissoes!['Produtos'];
   @override
   void initState() {
     // TODO: implement initState
@@ -29,10 +29,6 @@ class _CustomersState extends State<Storage> {
     }
   }
 
-  Getrole() async {
-    mostrar = await User_Database().getUserRole();
-  }
-
   AddProduct() async {
     await Navigator.of(context).pushNamed('/addProduct');
     await Reload();
@@ -41,86 +37,75 @@ class _CustomersState extends State<Storage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: Getrole(),
-        builder: (context, load) {
-          if (load.connectionState == ConnectionState.waiting) {
-            return Text('carregando');
-          } else {
-            print(mostrar);
-            return Scaffold(
-              body: SafeArea(
-                  child: Scaffold(
-                body: FutureBuilder(
-                    future: Reload(),
-                    builder: (context, load) {
-                      if (load.connectionState == ConnectionState.waiting) {
-                        return LoadingScreen();
-                      } else if (list.isNotEmpty) {
-                        return GridView.count(
-                          crossAxisCount: 3, // Número de colunas
-                          crossAxisSpacing:
-                              10, // Espaçamento horizontal entre itens
-                          mainAxisSpacing:
-                              10, // Espaçamento vertical entre itens
-                          padding:
-                              EdgeInsets.all(10), // Padding ao redor da grade
-                          children: list.map((product) {
-                            return GridTile(
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).pushNamed('/Product',
-                                      arguments: {"productId": product[1]});
-                                },
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                        child: Image.memory(product[0],
-                                            fit: BoxFit.scaleDown)),
-                                    Text(
-                                      product[2],
-                                    ),
-                                    Text(
-                                      formatCurrency(product[3]),
-                                      selectionColor:
-                                          Color.fromARGB(255, 233, 227, 227),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      } else {
-                        return Text("Não tem produto");
-                      }
-                    }),
-                appBar: AppBar(
-                    backgroundColor: Colors.transparent,
-                    leading: Builder(builder: (context) {
-                      return IconButton(
-                        icon: const Icon(Icons.menu),
-                        onPressed: () {
-                          Scaffold.of(context).openDrawer();
+    return Scaffold(
+      body: SafeArea(
+          child: Scaffold(
+        body: FutureBuilder(
+            future: Reload(),
+            builder: (context, load) {
+              if (load.connectionState == ConnectionState.waiting) {
+                return LoadingScreen();
+              } else if (list.isNotEmpty) {
+                return GridView.count(
+                  crossAxisCount: 3, // Número de colunas
+                  crossAxisSpacing: 10, // Espaçamento horizontal entre itens
+                  mainAxisSpacing: 10, // Espaçamento vertical entre itens
+                  padding: EdgeInsets.all(10), // Padding ao redor da grade
+                  children: list.map((product) {
+                    return GridTile(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushNamed('/Product',
+                              arguments: {"productId": product[1]});
                         },
-                      );
-                    })),
-                drawer: MainDrawer(page: 'storage'),
-                floatingActionButton: mostrar == "não"
-                    ? FloatingActionButton(
-                        onPressed: () {
-                          AddProduct();
-                        },
-                        shape: CircleBorder(),
-                        child: const Icon(
-                          Icons.add,
-                          size: 40,
+                        child: Column(
+                          children: [
+                            Expanded(
+                                child: Image.memory(product[0],
+                                    fit: BoxFit.scaleDown)),
+                            Text(
+                              product[2],
+                            ),
+                            Text(
+                              formatCurrency(product[3]),
+                              selectionColor:
+                                  Color.fromARGB(255, 233, 227, 227),
+                            )
+                          ],
                         ),
-                      )
-                    : null,
-              )),
-            );
-          }
-        });
+                      ),
+                    );
+                  }).toList(),
+                );
+              } else {
+                return Text("Não tem produto");
+              }
+            }),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            leading: Builder(builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
+            })),
+        drawer: MainDrawer(page: 'storage'),
+        // botão para adicionar produtos
+        floatingActionButton: permission == 2
+            ? FloatingActionButton(
+                onPressed: () {
+                  AddProduct();
+                },
+                shape: CircleBorder(),
+                child: const Icon(
+                  Icons.add,
+                  size: 40,
+                ),
+              )
+            : null,
+      )),
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:experimentos/DataBase.dart';
 import 'package:experimentos/Decoration.dart';
 import 'package:experimentos/Drawer.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +16,17 @@ class _ConfigState extends State<Config> {
     return Scaffold(
       body: SafeArea(
           child: Scaffold(
-        body: TextButton(
-          child: Text('caraio'),
-          onPressed: () {
-            AdicionarCargo(context);
-          },
+        body: Row(
+          children: [
+            TextButton(
+              child: Text('caraio'),
+              onPressed: () {
+                AdicionarCargo(context);
+              },
+            ),
+            ElevatedButton(
+                onPressed: () => pickLogo(), child: Text('Change logo'))
+          ],
         ),
         appBar: AppBar(
             backgroundColor: Colors.transparent,

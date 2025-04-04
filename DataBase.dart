@@ -149,20 +149,9 @@ class ProductDatabase {
   static final ProductDatabase _instance = ProductDatabase._internal();
   static Database? _database;
 
-  int idGenerator() {
-    String n1 = (Random().nextInt(10) + 1).toString();
-    String n2 = (Random().nextInt(10) + 1).toString();
-    String n3 = (Random().nextInt(10) + 1).toString();
-    String n4 = (Random().nextInt(10) + 1).toString();
-    String n5 = (Random().nextInt(10) + 1).toString();
-    String n6 = (Random().nextInt(10) + 1).toString();
-    String n7 = (Random().nextInt(10) + 1).toString();
-    String n8 = (Random().nextInt(10) + 1).toString();
-    String n9 = (Random().nextInt(10) + 1).toString();
-    String n10 = (Random().nextInt(10) + 1).toString();
-
-    var id = n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8 + n9 + n10;
-    return int.parse(id);
+  int idGenerator({int comprimento = 5}) {
+    final random = Random();
+    return random.nextInt(90000) + 10000;
   }
 
   factory ProductDatabase() {
@@ -192,6 +181,16 @@ class ProductDatabase {
     }
   }
 
+  checkid(int id) async {
+    final resultado = await _database!.query(
+      'products',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return resultado.isNotEmpty;
+  }
+
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'products.db');
     return await openDatabase(
@@ -200,7 +199,8 @@ class ProductDatabase {
       onCreate: (db, version) {
         return db.execute(
           '''CREATE TABLE products(
-          id INTEGER PRIMARY KEY, 
+          id INTEGER PRIMARY KEY,
+          data TEXT, 
           name TEXT UNIQUE, 
           owner TEXT, 
           cost REAL, 
@@ -216,31 +216,27 @@ class ProductDatabase {
   Future<void> insertProduct(Uint8List imageData, String name, double cost,
       double price, int amount) async {
     final db = await database;
-    var id = idGenerator();
-    final List<Map<String, dynamic>> maps = await db.query('products');
-    List CurrentIDs = List.generate(maps.length, (i) {
-      return maps[i]['image'] as Uint8List;
-    });
-    if (CurrentIDs.contains(id) == false) {
-      try {
-        await db.insert('products', {
-          'id': id,
-          'image': imageData,
-          'name': name,
-          // provisório, mudar isso aqui quando for criada a estrutura de cadastro
-          'owner': "Luana",
-          'cost': cost,
-          'price': price,
-          'synced': 0,
-          'stock': amount
-        });
-      } catch (e) {
-        print(
-            "Erro:Produto já cadastrado."); // Mensagem de erro para duplicatas
-      }
-
-      // verificar aqui depois, o que fazer se o ID gerado for igual a um existente
-      // OBS: a chance disso acontecer é de 1 em (10b - numero atual de produtos)
+    int id;
+    DateTime tempo = DateTime.now();
+    String data = DateFormat("yyyy/MM/dd HH:mm").format(tempo);
+    do {
+      id = idGenerator();
+    } while (await checkid(id));
+    try {
+      await db.insert('products', {
+        'id': id,
+        'criado': data,
+        'image': imageData,
+        'name': name,
+        // provisório, mudar isso aqui quando for criada a estrutura de cadastro
+        'owner': "Luana",
+        'cost': cost,
+        'price': price,
+        'synced': 0,
+        'stock': amount,
+      });
+    } catch (e) {
+      print("Erro: Produto já cadastrado."); // Mensagem de erro para duplicatas
     }
   }
 
@@ -272,7 +268,7 @@ class ProductDatabase {
     });
   }
 
-  // Função para excluir uma imagem do banco de dados
+  // Função para excluir um produto do banco de dados
   Future<void> deleteProduct(int id) async {
     final db = await database;
     await db.delete(
@@ -398,11 +394,11 @@ class User_Database {
       onCreate: (db, version) {
         return db.execute(
           '''CREATE TABLE user_data(
+          id TEXT PRIMARY KEY,
           data TEXT,
           receita REAL,
           lucro REAL,
           comissão REAL,
-          id TEXT,
           productID TEXT,
           quantidade INTEGER,
           synced INTEGER)''',
@@ -420,9 +416,9 @@ class User_Database {
         return db.execute(
           '''CREATE TABLE perfil(
           nome TEXT,
-          cpf TEXT,
-          email TEXT,
-          telefone TEXT,
+          cpf TEXT UNIQUE,
+          email TEXT UNIQUE,
+          telefone TEXT UNIQUE,
           cargo TEXT,
           comissão REAL,
           dataCadastro TEXT)''',

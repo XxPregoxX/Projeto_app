@@ -15,7 +15,7 @@ class Product extends StatefulWidget {
 }
 
 class _ProductState extends State<Product> {
-  String? productId;
+  int? productId;
   Map? data;
   String? profitpercent;
   double? profit;

@@ -12,11 +12,13 @@ class Scaner extends StatefulWidget {
 }
 
 Future QRprocess(id, context) async {
+  int id_int = int.parse(id);
   var db = ProductDatabase();
-  bool verify = await db.verifyId(id);
+  bool verify = await db.verifyId(id_int);
   if (verify == true) {
+    print('ai caraio' + id);
     Navigator.of(context)
-        .pushReplacementNamed('/Product', arguments: {"productId": id});
+        .pushReplacementNamed('/Product', arguments: {"productId": id_int});
   } else {
     showDialog(
         context: context,
@@ -39,7 +41,7 @@ class ScanerState extends State<Scaner> {
       onDetect: (capture) {
         final List<Barcode> barcodes = capture.barcodes;
         // fazer uma verificação de ID depois
-        QRprocess(barcodes.first.rawValue!.trim(), context = context);
+        QRprocess(barcodes.first.rawValue, context = context);
       },
     )));
   }

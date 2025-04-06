@@ -173,8 +173,8 @@ class ProductDatabase {
       whereArgs: [id], // Substitui o "?" pelo valor do ID
       limit: 1, // Opcional: retorna apenas 1 linha
     );
-    String databaseID = Product[0]['id'].toString();
-    String requestID = id;
+    int databaseID = Product[0]['id'] as int;
+    int requestID = id;
 
     if (databaseID == requestID) {
       return Product[0];
@@ -240,14 +240,16 @@ class ProductDatabase {
     }
   }
 
-  Future<bool> verifyId(String id) async {
+  Future<bool> verifyId(int id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('products');
-    List idList = await List<String>.generate(maps.length, (i) {
-      String ID = maps[i]['id'] as String;
+    List idList = List<int>.generate(maps.length, (i) {
+      print('teste1');
+      int ID = maps[i]['id'];
       return ID;
     });
-
+    print(idList);
+    print(id);
     if (idList.contains(id)) {
       return true;
     } else {
@@ -650,7 +652,7 @@ class User_Database {
     return agrupado;
   }
 
-  Future<int> getTotalQuantidade(String productID) async {
+  Future<int> getTotalQuantidade(int productID) async {
     final db = await database; // Obtém a instância do banco de dados
     final result = await db.rawQuery(
         'SELECT SUM(quantidade) as total FROM user_data WHERE productID = ?',

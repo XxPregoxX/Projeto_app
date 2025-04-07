@@ -225,7 +225,7 @@ class ProductDatabase {
     try {
       await db.insert('products', {
         'id': id,
-        'criado': data,
+        'data': data,
         'image': imageData,
         'name': name,
         // provisório, mudar isso aqui quando for criada a estrutura de cadastro
@@ -263,7 +263,7 @@ class ProductDatabase {
     return List.generate(maps.length, (i) {
       Uint8List image = maps[i]['image'] as Uint8List;
       String name = maps[i]['name'] as String;
-      String ID = maps[i]['id'].toString();
+      int ID = maps[i]['id'];
       double price = (maps[i]['price']) as double;
 
       return [image, ID, name, price];
@@ -402,6 +402,7 @@ class User_Database {
           lucro REAL,
           comissão REAL,
           productID TEXT,
+          sellerID TEXT,
           quantidade INTEGER,
           synced INTEGER)''',
         );
@@ -498,6 +499,9 @@ class User_Database {
   // 0: sem premissão nenhuma
   // 1: permissão de ler
   // 2: permissão de ler e escrever(editar/adicionar)
+  // a fazer:
+  // limite de cargos por cadastro
+  // porcentagem de desconto permitido por cargo
   MakeRole(
       {required String? nome,
       required int? produtos,
@@ -516,6 +520,10 @@ class User_Database {
     });
   }
 
+  // busca e retorna as permissões do usuario logado
+  // vaso não estejam no banco de dados local ele busca no firebase
+  // a fazer:
+  // algum retorno caso não tenha internet e essa info não tenha na db local
   GetPermissions({
     required String? cargo,
   }) async {
@@ -532,6 +540,9 @@ class User_Database {
     }
   }
 
+  // busca os cargos do firebase
+  // a fazer:
+  // opção de administrador, para buscar todos os cargos
   _getRolesFirebase() async {
     String cargo = UserDataCache.Cargo!;
     var cargo_info =
@@ -574,6 +585,10 @@ class User_Database {
     }
   }
 
+  // Essa função executa a venda, adicionando ela ao banco de dados local,
+  // a fazer:
+  // verificador se tudo foi adicionado ao firebase sem problemas
+  // verificado de conexão antes de tentar adicionar os dados ai firebase
   insertSell(
       {required double? comissao,
       required double? receita,
@@ -583,6 +598,7 @@ class User_Database {
     String data = DateFormat("yyyy/MM/dd HH:mm").format(tempo);
     String formated = DateFormat("yyyyMMddHHmmssSSS").format(tempo);
     String id = formated.split('').reversed.join('');
+    String uid = await user!.uid;
     var db = await database;
     await db.insert('user_data', {
       'data': data,
@@ -591,12 +607,16 @@ class User_Database {
       'lucro': lucro,
       'id': id,
       'productID': productID,
+      'sellerID': uid,
       'quantidade': 1,
       'synced': 0,
     });
     SyncSellstoFirebase();
   }
 
+  // função para sincronizar todas as vendas com o valor "synced = 0" para o firebase
+  // a fazer:
+  // colocar essa função
   SyncSellstoFirebase() async {
     var db = await database;
     String uid = await user!.uid;
@@ -608,6 +628,7 @@ class User_Database {
       dynamic id = row['id'];
       dynamic lucro = row['lucro'];
       dynamic productID = row['productID'];
+      dynamic sellerID = row['sellerID'];
       dynamic comissao = row['comissão'];
       dynamic receita = row['receita'];
       var cloud =
@@ -619,12 +640,17 @@ class User_Database {
         'lucro': lucro,
         'comissão': comissao,
         'productID': productID,
+        'sellerID': sellerID,
       });
       await db.update('user_data', {'synced': 1},
           where: 'id = ?', whereArgs: [id]);
     });
   }
 
+  // função que busca todas as vendas feitas por este usuario
+  // a fazer:
+  // função de adm que busca de todos os usuarios
+  // limite de busca para evitar problemas de memória
   getSells() async {
     var db = await database;
     var result = await db.query('user_data');
@@ -652,6 +678,7 @@ class User_Database {
     return agrupado;
   }
 
+  // Busca o estoque de um produto no cadastro
   Future<int> getTotalQuantidade(int productID) async {
     final db = await database; // Obtém a instância do banco de dados
     final result = await db.rawQuery(
@@ -665,6 +692,9 @@ class User_Database {
     }
   }
 
+  // Adiciona um usuario ao cadastro
+  // a fazer:
+  // limite de usuarios por cadastro
   Add_user({
     required String? email,
     required String? password,
@@ -714,6 +744,8 @@ class User_Database {
     }
   }
 
+  // adiciona os dados do usuario(cargo e permissões) à memória para não precisar
+  // busca do banco toda vez
   Future<void> carregarDadosDoUsuario() async {
     String cargo = await getUserRole();
     // Armazena o cargo
